@@ -35,6 +35,7 @@ db.once('open', function (callback) {
 
 
 app.post('/user', users.create);
+app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
 app.put('/user', [express.urlencoded(), jwtauth], users.update);
 app.get('/user', [express.urlencoded(), jwtauth], users.search);
 

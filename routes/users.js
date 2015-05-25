@@ -52,13 +52,49 @@ updateUser = function(newUser,existingUser, res){
 
 exports.search = function(req, res) {
 	var currentUser = req.user;
-	var locations = currentUser.search.locations,
-	industries    = currentUser.search.industries;
+	if(currentUser.category === 'referer'){
+		var locations = currentUser.search.locations,
+		industries    = currentUser.search.industries;
+		var search = user.find();
+		if(locations.length > 0){
+			search.where('location.name').in(locations);
+		}
+		if(industries.length > 0){
+			search.where('industry').in(industries);
+		}
+		search.where('category').equals('looking_for_job')
+		.exec(function(err, result){
+			if(err)return console.log(err);
+			res.send(result);
+		});
+	}else if(currentUser.category === 'looking_for_job'){
+		var locations = currentUser.wants.locations,
+		industries    = currentUser.wants.industries;
+		companies     = currentUser.wants.companies
+		var search = user.find();
+		if(companies.length > 0){
+			search.where('currentJob.company').in(companies);
+		}
+		if(locations.length > 0){
+			search.where('location.name').in(locations);
+		}
+		if(industries.length > 0){
+			search.where('industry').in(industries);
+		}
+		search.where('category').equals('referer')
+		.exec(function(err, result){
+			if(err)return console.log(err);
+			res.send(result);
+		});
+	}else{
+		res.send('Invalid user', 403);
+	}
+};
 
+exports.searchByIds = function(req, res) {
+	var ids = req.body.ids;
 	user.find()
-	.where('location.name').in(locations)
-	.where('industry').in(industries)
-	.where('category').equals('looking_for_job')
+	.where('_id').in(ids)
 	.exec(function(err, result){
 		if(err)return console.log(err);
 		res.send(result);
