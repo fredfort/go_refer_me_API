@@ -38,6 +38,8 @@ app.post('/user', users.create);
 app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
 app.put('/user', [express.urlencoded(), jwtauth], users.update);
 app.get('/user', [express.urlencoded(), jwtauth], users.search);
+app.get('/companies', [express.urlencoded(), jwtauth], users.getUserCompanies);
+
 
 
 // if none of the previous url get called 404 handeling

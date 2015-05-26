@@ -57,10 +57,10 @@ exports.search = function(req, res) {
 		industries    = currentUser.search.industries;
 		var search = user.find();
 		if(locations.length > 0){
-			search.where('location.name').in(locations);
+			search.where('wants.location.name').in(locations);
 		}
 		if(industries.length > 0){
-			search.where('industry').in(industries);
+			search.where('wants.industry').in(industries);
 		}
 		search.where('category').equals('looking_for_job')
 		.exec(function(err, result){
@@ -76,10 +76,10 @@ exports.search = function(req, res) {
 			search.where('currentJob.company').in(companies);
 		}
 		if(locations.length > 0){
-			search.where('location.name').in(locations);
+			search.where('search.locations').in(locations);
 		}
 		if(industries.length > 0){
-			search.where('industry').in(industries);
+			search.where('search.industry').in(industries);
 		}
 		search.where('category').equals('referer')
 		.exec(function(err, result){
@@ -123,5 +123,15 @@ exports.create = function(req, res) {
    		}else{
    			createUser(newUser, res);
    		}
+ 	});
+};
+
+exports.getUserCompanies = function(req, res){
+	user.find({},'currentJob.company')
+	.where('category').equals('referer')
+	.where('currentJob.company').ne(null)
+	.exec(function(err, result){
+   		if(err)return console.log(err);
+ 		res.send(result);
  	});
 };
