@@ -23,8 +23,12 @@ var mailOptions = {
 
 // send mail with defined transport object
 exports.sendMail = function(newUser){
-  var template = '<b>Hello</b><br />'+newUser.firstName+' has subscribe to  to Refer to me!<br/>'+
-  '<br><br> You can find his/her profile here: <a href="'+newUser.siteStandardProfileRequest.url+'">'+newUser.siteStandardProfileRequest.url+'</a>';
+  var template = '<b>Hello</b><br />'+newUser.firstName+' has subscribe to  to Refer to me!<br/>';
+  if(newUser.siteStandardProfileRequest && newUser.siteStandardProfileRequest.url){
+    template += '<br><br> You can find his/her profile here: <a href="'+newUser.siteStandardProfileRequest.url+'">'+newUser.siteStandardProfileRequest.url+'</a>';
+  }else{
+    template += '<br>This profile does not have a linkedin account<br>';
+  }
   mailOptions.to= 'goreferme@gmail.com', // list of receivers
   mailOptions.html = template;
 

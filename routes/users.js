@@ -2,8 +2,11 @@ var user = require('../models/users.js');
 var jwt = require('jwt-simple');
 var moment = require('moment');
 var nodemailer = require('../utils/email.js');
+var _ =  require("lodash");
+var ObjectId = require("mongoose").Types.ObjectId;
 
 createUser = function(userObject,res){
+	debugger;
 	var userToInsert = new user(userObject);
 	userToInsert.save(function(err, newUser){
 		console.log(err);
@@ -28,12 +31,13 @@ createUser = function(userObject,res){
 };
 
 updateUser = function(newUser,existingUser, res){
-
+	debugger;
 	existingUser.firstName  = newUser.firstName;
 	existingUser.headline   = newUser.headline;
 	existingUser.location   = newUser.location;
 	existingUser.pictureUrl = newUser.pictureUrl;
     existingUser.lastName   = newUser.lastName;
+    existingUser.emailAddress   = newUser.emailAddress;
 
     existingUser.save();
 
@@ -50,17 +54,34 @@ updateUser = function(newUser,existingUser, res){
 	});	
 };
 
+exports.me = function(req, res){
+	var currentUser = req.user;
+	if(!currentUser){
+		res.send('Invalid request', 405);
+	}else{
+		res.send(currentUser._doc);
+	}
+}
+
 exports.search = function(req, res) {
 	var currentUser = req.user;
 	if(currentUser.category === 'referer'){
 		var locations = currentUser.search.locations,
-		industries    = currentUser.search.industries;
+		industries    = currentUser.search.industries,
+		languages     = currentUser.search.languages,
+		functions     = currentUser.search.functions;
 		var search = user.find();
 		if(locations.length > 0){
-			search.where('wants.location.name').in(locations);
+			search.where('wants.locations').in(locations);
 		}
 		if(industries.length > 0){
-			search.where('wants.industry').in(industries);
+			search.where('wants.industries').in(industries);
+		}
+		if(languages.length > 0){
+			search.where('wants.languages').in(languages);
+		}
+		if(functions.length > 0){
+			search.where('wants.functions').in(functions);
 		}
 		search.where('category').equals('looking_for_job')
 		.exec(function(err, result){
@@ -69,8 +90,10 @@ exports.search = function(req, res) {
 		});
 	}else if(currentUser.category === 'looking_for_job'){
 		var locations = currentUser.wants.locations,
-		industries    = currentUser.wants.industries;
-		companies     = currentUser.wants.companies
+		industries    = currentUser.wants.industries,
+		companies     = currentUser.wants.companies,
+		languages     = currentUser.wants.languages,
+		functions     = currentUser.wants.functions;
 		var search = user.find();
 		if(companies.length > 0){
 			search.where('currentJob.company').in(companies);
@@ -79,7 +102,13 @@ exports.search = function(req, res) {
 			search.where('search.locations').in(locations);
 		}
 		if(industries.length > 0){
-			search.where('search.industry').in(industries);
+			search.where('search.industries').in(industries);
+		}
+		if(languages.length > 0){
+			search.where('search.languages').in(languages);
+		}
+		if(functions.length > 0){
+			search.where('search.functions').in(functions);
 		}
 		search.where('category').equals('referer')
 		.exec(function(err, result){
@@ -115,15 +144,19 @@ exports.create = function(req, res) {
 	 if (!newUser || newUser.length === 0) {
 	    return res.send(401);
 	 }
-	 user.findOne({id : newUser.id},function(err, existingUser){
-   		if(err)return console.log(err);
-   		
-   		if(existingUser){
-   			updateUser(newUser,existingUser, res);
-   		}else{
-   			createUser(newUser, res);
-   		}
- 	});
+	 if(!newUser.id){//User create manually
+	 	createUser(newUser, res);
+	 }else{//User created with linkedin connection
+		 user.findOne({id : newUser.id},function(err, existingUser){
+	   		if(err)return console.log(err);
+	   		debugger;
+	   		if(existingUser){
+	   			updateUser(newUser,existingUser, res);
+	   		}else{
+	   			createUser(newUser, res);
+	   		}
+	 	});
+	}
 };
 
 exports.getUserCompanies = function(req, res){
@@ -135,3 +168,159 @@ exports.getUserCompanies = function(req, res){
  		res.send(result);
  	});
 };
+
+exports.invite = function(req, res){
+	var currentUser = req.user;
+	var userInvited = req.body.user || '';
+	if (!currentUser || currentUser.length === 0 || !userInvited || userInvited.length === 0) {
+	    return res.send(401);
+	}
+	var invitationsSent = currentUser.invitationsSent;
+	if(invitationsSent.indexOf(userInvited._id) === -1){
+		invitationsSent.push(userInvited._id);
+	}
+
+	user.update({ _id: currentUser._id },{invitationsSent: invitationsSent}, function(err,success){
+		if(err)return console.log(err);
+
+		var invitationsReceived = userInvited.invitationsReceived;
+		if(invitationsReceived.indexOf(currentUser._id) === -1){
+			invitationsReceived.push(currentUser._id);
+		}
+		user.update({ _id: userInvited._id },{invitationsReceived: invitationsReceived}, function(err2,success2){
+			if(err2)return console.log(err2);
+			res.send(currentUser._doc);
+		});	
+	});
+}
+
+exports.acceptInvitation = function(req,res){
+	var currentUser = req.user;
+	var userAccepted = req.body.user || '';
+	//Check that we really got the invitation
+	var invitation_user_id = _.find(currentUser.invitationsReceived, function(userId){
+		return userId.equals(userAccepted._id);
+	});
+	if(!invitation_user_id){
+		return res.send(403);//Forbidden
+	}else{
+		//current user is updated (+ 1 friends, -1 invitationsReceived)
+		currentUser.invitationsReceived = _.without(currentUser.invitationsReceived, invitation_user_id);
+		var friends = currentUser.friends;
+		if(friends.indexOf(invitation_user_id) === -1){//check that the user is not a friend already
+			friends.push(invitation_user_id);
+		}
+		user.update({ _id: currentUser._id },{invitationsReceived: currentUser.invitationsReceived, friends:friends }, function(err,success){
+			if(err)return console.log(err);
+
+			//accepted user is updated (+ 1 friends, -1 invitationsSent)
+			var invitationsSent = _.without(userAccepted.invitationsSent, currentUser._id.toString());
+			friends = userAccepted.friends;
+			if(friends.indexOf(currentUser._id) === -1){//check that the user is not a friend already
+				friends.push(currentUser._id);
+			}
+			user.update({ _id: userAccepted._id },{invitationsSent: invitationsSent, friends:friends}, function(err2,success2){
+				if(err2)return console.log(err2);
+				res.send(currentUser._doc);//the response is finally sent
+			});
+		});
+	}
+}
+
+exports.denyInvitation = function(req,res){
+	var currentUser = req.user;
+	var userDenied = req.body.user || '';
+		//Check that we really got the invitation
+	var invitation_user_id = _.find(currentUser.invitationsReceived, function(userId){
+		return userId.equals(userDenied._id);
+	});
+	if(!invitation_user_id){
+		return res.send(403);//Forbidden
+	}else{
+		//current user is updated (-1 invitationsReceived)
+		currentUser.invitationsReceived = _.without(currentUser.invitationsReceived, invitation_user_id);
+		user.update({ _id: currentUser._id },{invitationsReceived: currentUser.invitationsReceived }, function(err,success){
+			if(err)return console.log(err);
+
+			//accepted user is updated ( -1 invitationsSent)
+			var invitationsSent = _.without(userDenied.invitationsSent, currentUser._id.toString());
+		
+			user.update({ _id: userDenied._id },{invitationsSent: invitationsSent}, function(err2,success2){
+				if(err2)return console.log(err2);
+				res.send(currentUser._doc);//the response is finally sent
+			});
+		});
+	}
+};
+
+exports.unFriend = function(req, res){
+	var currentUser = req.user;
+	var userUnfriended = req.body.user || '';
+
+	//Check that users are friends
+	var friend_id = _.find(currentUser.friends, function(userId){
+		return userId.equals(userUnfriended._id);
+	});
+
+	//current user is updated (-1 friend)
+
+	currentUser.friends = _.without(currentUser.friends, friend_id);
+	user.update({ _id: currentUser._id },{friends: currentUser.friends }, function(err,success){
+		if(err)return console.log(err);
+
+		//unfriended user is updated (-1 friend)
+		userUnfriended.friends = _.without(userUnfriended.friends, currentUser._id.toString());
+		user.update({ _id: userUnfriended._id },{friends: userUnfriended.friends}, function(err2,success2){
+			if(err2)return console.log(err2);
+			res.send(currentUser._doc);//the response is finally sent
+		});
+	});
+};
+
+exports.cancelInvitation = function(req, res){
+	var currentUser = req.user;
+	var userUnfriended = req.body.user || '';
+
+	//Check that the invitation has been sent
+	var friend_id = _.find(currentUser.invitationsSent, function(userId){
+		return userId.equals(userUnfriended._id);
+	});
+
+	//current user is updated (-1 invitationsSent)
+
+	currentUser.invitationsSent = _.without(currentUser.invitationsSent, friend_id);
+	user.update({ _id: currentUser._id },{invitationsSent: currentUser.invitationsSent }, function(err,success){
+		if(err)return console.log(err);
+
+		//unfriended user is updated (-1 invitationsReceived)
+		userUnfriended.invitationsReceived = _.without(userUnfriended.invitationsReceived, currentUser._id.toString());
+		user.update({ _id: userUnfriended._id },{invitationsReceived: userUnfriended.invitationsReceived}, function(err2,success2){
+			if(err2)return console.log(err2);
+			res.send(currentUser._doc);//the response is finally sent
+		});
+	});
+};
+
+exports.login = function(req, res){
+
+	var emailAddress = req.body.emailAddress || '';
+	var password = req.body.password || '';
+	debugger;
+	if (!emailAddress || emailAddress.length === 0 || !password || password.length === 0) {
+	    return res.send(400);
+	}
+	user.findOne({emailAddress: emailAddress}, function (err, userFound) {
+	    if (err) {
+	      console.log(err);
+	      return res.send({credentials:false});
+	    }
+
+		userFound.comparePassword(password,function(ok){
+			if(ok){
+				res.send({credentials:true});
+			}else{
+				res.send({credentials:false});
+			}
+		});
+	});
+}

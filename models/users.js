@@ -1,28 +1,14 @@
 var mongoose = require('mongoose');
-/*
-firstName: "Frédéric"
-headline: "Software Engineer at Cognovi Ltd"
-id: "ohXfEaVSft"
-industry: "Internet"
-lastName: "FORT"
-location: Object
-country: Object
-name: "Ireland"
-__proto__: Object
-numConnections: 107
-pictureUrl: "https://media.licdn.com/mpr/mprx/0_bIomh7udcYecH33z5dIjhD7QcUOqekAz52OAh2pUHZoXBh6vIDVCmuevJ1YII_rJQHHKfwCEeADm"
-search: Object
-industries: Array[0]
-locations: Array[0]
-*/
-var country = mongoose.Schema({name: {type:String, require:true}});
 
 var usersSchema = mongoose.Schema ({ 
-	firstName:  {type:String, require:true},
-	headline:   {type:String, require:true},
-	category:   {type:String, require:true},
-	id:         {type:String, require:true},
-	industry:   {type:String, require:true},
+	firstName:    {type:String, require:true},
+	headline:     {type:String, require:true},
+	category:     {type:String, require:true},
+	id:           {type:String, require:true},
+	industry:     {type:String, require:true},
+	emailAddress: {type:String, require:true},
+	password:     {type:String, require:true},
+	credit:       {type:Number, require:true, default:10},
 	location:    {
 		name: {
 			type:String,
@@ -42,6 +28,12 @@ var usersSchema = mongoose.Schema ({
 		},
 		industries:{
 			type:[String], require:false
+		},
+		languages:{
+			type:[String], require:false
+		},
+		functions:{
+			type:[String], require:false	
 		}
 	},
 	wants: {
@@ -53,18 +45,28 @@ var usersSchema = mongoose.Schema ({
 		},
 		companies:{
 			type:[String], require:false
+		},
+		languages:{
+			type:[String], require:false
+		},
+		functions:{
+			type:[String], require:false	
 		}
 	},
 	siteStandardProfileRequest:{
 		url:{type:String, require:false}
 	},
     lastName:   {type:String, require:true},
-    trash:{type:[mongoose.Schema.Types.ObjectId], require:true},
-    saved:{type:[mongoose.Schema.Types.ObjectId], require:true}
+   	friends:             {type:[mongoose.Schema.Types.ObjectId], require:true},
+	invitationsSent:     {type:[mongoose.Schema.Types.ObjectId], require:true},
+	invitationsReceived: {type:[mongoose.Schema.Types.ObjectId], require:true},
+    trash:               {type:[mongoose.Schema.Types.ObjectId], require:true},
+    saved:               {type:[mongoose.Schema.Types.ObjectId], require:true}
 });
 
 
 usersSchema.methods.comparePassword = function(password, cb) {
+	debugger;
 	return (password === this.password)?cb(true):cb(false);
 };
 

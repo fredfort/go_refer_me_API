@@ -24,22 +24,28 @@ app.use(function(req, res, next) {
 });
 
 //var uri ="mongodb://localhost:27017";
-var uri = "mongodb://go_refer_me:fatcap32@ds059938.mongolab.com:59938";
-mongoose.connect(uri+"/go_refer_me");
+var uri = "mongodb://go_refer_me:fatcap32@ds045938.mongolab.com:45938";
+mongoose.connect(uri+"/go_refer_me_ue");
 
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function (callback) {
-  console.log("connected to go_refer_me");
+  console.log("connected to go_refer_me_ue");
 });
 
 
 app.post('/user', users.create);
+app.post('/user/login', users.login);
 app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
+app.post('/user/accept',[express.urlencoded(), jwtauth], users.acceptInvitation);
+app.post('/user/unFriend',[express.urlencoded(), jwtauth], users.unFriend);
+app.post('/user/deny',[express.urlencoded(), jwtauth], users.denyInvitation);
+app.post('/user/cancelInvitation',[express.urlencoded(), jwtauth], users.cancelInvitation);
 app.put('/user', [express.urlencoded(), jwtauth], users.update);
 app.get('/user', [express.urlencoded(), jwtauth], users.search);
+app.get('/me', [express.urlencoded(), jwtauth], users.me);
 app.get('/companies', [express.urlencoded(), jwtauth], users.getUserCompanies);
-
+app.post('/invite', [express.urlencoded(), jwtauth], users.invite);
 
 
 // if none of the previous url get called 404 handeling
