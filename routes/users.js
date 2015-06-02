@@ -31,7 +31,6 @@ createUser = function(userObject,res){
 };
 
 updateUser = function(newUser,existingUser, res){
-	debugger;
 	existingUser.firstName  = newUser.firstName;
 	existingUser.headline   = newUser.headline;
 	existingUser.location   = newUser.location;
@@ -305,7 +304,7 @@ exports.login = function(req, res){
 
 	var emailAddress = req.body.emailAddress || '';
 	var password = req.body.password || '';
-	debugger;
+
 	if (!emailAddress || emailAddress.length === 0 || !password || password.length === 0) {
 	    return res.send(400);
 	}
@@ -317,10 +316,54 @@ exports.login = function(req, res){
 
 		userFound.comparePassword(password,function(ok){
 			if(ok){
-				res.send({credentials:true});
+				var expires = moment().add('days', 7).valueOf();
+				var token = jwt.encode({
+					iss: userFound._id,
+					exp: expires
+				}, 'fatcap32');
+				userFound.password = null;
+				res.json({
+				  token : token,
+				  expires: expires,
+				  user: userFound.toJSON()
+				});	
 			}else{
 				res.send({credentials:false});
 			}
 		});
 	});
-}
+};
+
+exports.reinitPassword = function(req, res){
+	var emailAddress = req.body.emailAddress || '';
+	if (!emailAddress || emailAddress.length === 0) {
+	    res.send(400,'emailAddress has to be sent');
+	}
+	user.findOne({emailAddress: emailAddress}, function (err, userFound) {
+	    if (err) {
+	      console.log(err);
+	      res.send({credentials:false});
+	    }
+
+	    nodemailer.sendNewPasswordMail(userFound, function(){
+	    	res.send({ok:true});
+	    }, function(){
+	    	res.send({ok:false, message:'The mail could not be sent to '+emailAddress});
+	    });
+
+	    
+	});
+};
+
+exports.changePassword = function(req, res){
+	var currentUser = req.user;
+	var password = req.body.password;
+	if (!password || password.length === 0) {
+	    res.send(400,'password has to be sent');
+	}
+
+	user.update({ _id: currentUser._id },{password: password }, function(err,success){
+		if(err)return console.log(err);
+			res.send({ok:true});//the response is finally sent
+	});
+};

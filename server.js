@@ -36,6 +36,8 @@ db.once('open', function (callback) {
 
 app.post('/user', users.create);
 app.post('/user/login', users.login);
+app.post('/user/reinitPassword', users.reinitPassword);
+app.post('/user/changePassword',[express.urlencoded(), jwtauth], users.changePassword);
 app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
 app.post('/user/accept',[express.urlencoded(), jwtauth], users.acceptInvitation);
 app.post('/user/unFriend',[express.urlencoded(), jwtauth], users.unFriend);

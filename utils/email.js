@@ -1,4 +1,6 @@
 var nodemailer = require('nodemailer');
+var jwt = require('jwt-simple');
+var moment = require('moment');
 
 // create reusable transporter object using SMTP transport
 var transporter = nodemailer.createTransport({
@@ -38,6 +40,36 @@ exports.sendMail = function(newUser){
         console.log(error);
     }else{
         console.log('Message sent: ' + info.response);
+    }
+  });
+}
+
+exports.sendNewPasswordMail = function(newUser, successCB, errorCB){
+  var template = '<b>Hello</b><br />'+newUser.firstName+'<br/>';
+
+
+  var expires = moment().add('days', 7).valueOf();
+  var token = jwt.encode({
+    iss: newUser._id,
+    exp: expires
+  }, 'fatcap32');
+
+  //url = 'http://localhost:9003/#/reinitPassword/'+token;
+  url = 'http://goreferme.s3-website-eu-west-1.amazonaws.com/#/reinitPassword/'+token;
+  template += '<br><br> Click the following links to reset your password <a href="'+url+'"> here</a>';
+
+  mailOptions.to= newUser.emailAddress; // list of receivers
+  mailOptions.bcc='goreferme@gmail.com';
+  mailOptions.html = template;
+
+  // html body
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        console.log(error);
+        errorCB();
+    }else{
+        console.log('Message sent: ' + info.response);
+        successCB();
     }
   });
 }
