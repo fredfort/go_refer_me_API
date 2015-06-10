@@ -5,6 +5,10 @@ var nodemailer = require('../utils/email.js');
 var _ =  require("lodash");
 var ObjectId = require("mongoose").Types.ObjectId;
 
+var connectionStatus = {
+	CONNECTED:'connected'
+};
+
 createUser = function(userObject,res){
 	debugger;
 	var userToInsert = new user(userObject);
@@ -101,7 +105,7 @@ exports.search = function(req, res) {
 			search.where('search.locations').in(locations);
 		}
 		if(industries.length > 0){
-			search.where('search.industries').in(industries);
+			search.where('industry').in(industries);
 		}
 		if(languages.length > 0){
 			search.where('search.languages').in(languages);
@@ -148,7 +152,6 @@ exports.create = function(req, res) {
 	 }else{//User created with linkedin connection
 		 user.findOne({id : newUser.id},function(err, existingUser){
 	   		if(err)return console.log(err);
-	   		debugger;
 	   		if(existingUser){
 	   			updateUser(newUser,existingUser, res);
 	   		}else{
@@ -206,8 +209,19 @@ exports.acceptInvitation = function(req,res){
 		//current user is updated (+ 1 friends, -1 invitationsReceived)
 		currentUser.invitationsReceived = _.without(currentUser.invitationsReceived, invitation_user_id);
 		var friends = currentUser.friends;
-		if(friends.indexOf(invitation_user_id) === -1){//check that the user is not a friend already
-			friends.push(invitation_user_id);
+		var friendsIds = _.map(friends, function(friend){
+			return friend.id;
+		});
+		
+
+		if(friendsIds.indexOf(invitation_user_id) === -1){//check that the user is not a friend already
+			var newFriend = {
+				id:invitation_user_id,
+				status: connectionStatus.CONNECTED,
+				date_connection: new Date(),
+				last_update: new Date()
+			};
+			friends.push(newFriend);
 		}
 		user.update({ _id: currentUser._id },{invitationsReceived: currentUser.invitationsReceived, friends:friends }, function(err,success){
 			if(err)return console.log(err);
@@ -215,8 +229,17 @@ exports.acceptInvitation = function(req,res){
 			//accepted user is updated (+ 1 friends, -1 invitationsSent)
 			var invitationsSent = _.without(userAccepted.invitationsSent, currentUser._id.toString());
 			friends = userAccepted.friends;
-			if(friends.indexOf(currentUser._id) === -1){//check that the user is not a friend already
-				friends.push(currentUser._id);
+			var friendsIds = _.map(friends, function(friend){
+				return friend.id;
+			});
+			if(friendsIds.indexOf(currentUser._id) === -1){//check that the user is not a friend already
+				var newFriend = {
+					id:currentUser._id,
+					status: connectionStatus.CONNECTED,
+					date_connection: new Date(),
+					last_update: new Date()
+				};
+				friends.push(newFriend);
 			}
 			user.update({ _id: userAccepted._id },{invitationsSent: invitationsSent, friends:friends}, function(err2,success2){
 				if(err2)return console.log(err2);
@@ -257,16 +280,22 @@ exports.unFriend = function(req, res){
 	var userUnfriended = req.body.user || '';
 
 	//Check that users are friends
-	var friend_id = _.find(currentUser.friends, function(userId){
-		return userId.equals(userUnfriended._id);
+	var friend = _.find(currentUser.friends, function(friend){
+		return friend.id.equals(userUnfriended._id);
 	});
+	debugger;
 
 	//current user is updated (-1 friend)
 
-	currentUser.friends = _.without(currentUser.friends, friend_id);
+	currentUser.friends = _.without(currentUser.friends, friend);
 	user.update({ _id: currentUser._id },{friends: currentUser.friends }, function(err,success){
 		if(err)return console.log(err);
 
+		friend = _.find(userUnfriended.friends, function(friend){
+			return friend.id === currentUser._id.toString();
+
+		});
+		debugger;
 		//unfriended user is updated (-1 friend)
 		userUnfriended.friends = _.without(userUnfriended.friends, currentUser._id.toString());
 		user.update({ _id: userUnfriended._id },{friends: userUnfriended.friends}, function(err2,success2){
