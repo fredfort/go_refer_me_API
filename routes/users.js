@@ -10,8 +10,8 @@ var connectionStatus = {
 };
 
 createUser = function(userObject,res){
-	debugger;
 	var userToInsert = new user(userObject);
+
 	userToInsert.save(function(err, newUser){
 		console.log(err);
 		if (err) {
@@ -29,7 +29,7 @@ createUser = function(userObject,res){
 		  user: newUser.toJSON()
 		});
 
-		nodemailer.sendMail(userObject);
+		nodemailer.sendMail(userObject,token);
 
 	});
 };
@@ -72,7 +72,8 @@ exports.search = function(req, res) {
 		var locations = currentUser.search.locations,
 		industries    = currentUser.search.industries,
 		languages     = currentUser.search.languages,
-		functions     = currentUser.search.functions;
+		functions     = currentUser.search.functions,
+		experience    = currentUser.search.experience;
 		var search = user.find();
 		if(locations.length > 0){
 			search.where('wants.locations').in(locations);
@@ -86,6 +87,9 @@ exports.search = function(req, res) {
 		if(functions.length > 0){
 			search.where('wants.functions').in(functions);
 		}
+		if(experience.length > 0){
+			search.where('wants.experience').in(experience);
+		}
 		search.where('category').equals('looking_for_job')
 		.exec(function(err, result){
 			if(err)return console.log(err);
@@ -96,7 +100,8 @@ exports.search = function(req, res) {
 		industries    = currentUser.wants.industries,
 		companies     = currentUser.wants.companies,
 		languages     = currentUser.wants.languages,
-		functions     = currentUser.wants.functions;
+		functions     = currentUser.wants.functions,
+		experience    = currentUser.wants.experience;
 		var search = user.find();
 		if(companies.length > 0){
 			search.where('currentJob.company').in(companies);
@@ -112,6 +117,9 @@ exports.search = function(req, res) {
 		}
 		if(functions.length > 0){
 			search.where('search.functions').in(functions);
+		}
+		if(experience.length > 0){
+			search.where('search.experience').in(experience);
 		}
 		search.where('category').equals('referer')
 		.exec(function(err, result){
@@ -152,6 +160,7 @@ exports.create = function(req, res) {
 	 }else{//User created with linkedin connection
 		 user.findOne({id : newUser.id},function(err, existingUser){
 	   		if(err)return console.log(err);
+   			newUser.active = true;//user logged with linkedin are active by default
 	   		if(existingUser){
 	   			updateUser(newUser,existingUser, res);
 	   		}else{
@@ -283,7 +292,6 @@ exports.unFriend = function(req, res){
 	var friend = _.find(currentUser.friends, function(friend){
 		return friend.id.equals(userUnfriended._id);
 	});
-	debugger;
 
 	//current user is updated (-1 friend)
 
@@ -295,7 +303,7 @@ exports.unFriend = function(req, res){
 			return friend.id === currentUser._id.toString();
 
 		});
-		debugger;
+
 		//unfriended user is updated (-1 friend)
 		userUnfriended.friends = _.without(userUnfriended.friends, currentUser._id.toString());
 		user.update({ _id: userUnfriended._id },{friends: userUnfriended.friends}, function(err2,success2){
@@ -394,5 +402,42 @@ exports.changePassword = function(req, res){
 	user.update({ _id: currentUser._id },{password: password }, function(err,success){
 		if(err)return console.log(err);
 			res.send({ok:true});//the response is finally sent
+	});
+};
+
+exports.changeFriendShipStatus = function(req, res){
+	var currentUser = req.user;
+	var userId = req.body.userId,
+		status = req.body.status;
+
+	if (!userId || userId.length === 0 || !status || !status.length === 0) {
+	    res.send(400,'An user Id and a status are required');
+	}
+
+	var found = false;
+	currentUser.friends.forEach(function(friend){
+		if(friend.id.toString() === userId){
+			friend.status = status;
+			friend.last_update = new Date();
+			found = true;
+			return;
+		}
+	});
+
+	if(!found){
+		 res.send(404,'User not found');
+	}
+
+	user.update({ _id: currentUser._id },{friends: currentUser.friends }, function(err,success){
+		if(err)return console.log(err);
+		res.send({ok:true});//the response is finally sent
+	});
+};
+
+exports.activateAccount = function(req, res){
+	var currentUser = req.user;
+	user.update({ _id: currentUser._id },{active:true }, function(err,success){
+		if(err)return console.log(err);
+		res.send({ok:true});//the response is sent
 	});
 };

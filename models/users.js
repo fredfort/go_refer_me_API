@@ -1,12 +1,5 @@
 var mongoose = require('mongoose');
 
-var connectionSchema = mongoose.Schema({
-	id:              {type: mongoose.Schema.Types.ObjectId, require:true},
-	status:          {type: String, require:true},
-	date_connection: {type: Date, require:true},
-	last_update:     {type: Date, require:true},
-});
-
 var usersSchema = mongoose.Schema ({ 
 	firstName:    {type:String, require:true},
 	headline:     {type:String, require:true},
@@ -42,6 +35,9 @@ var usersSchema = mongoose.Schema ({
 		},
 		functions:{
 			type:[String], require:false	
+		},
+		experience:{
+			type:[String], require:false
 		}
 	},
 	wants: {
@@ -59,13 +55,23 @@ var usersSchema = mongoose.Schema ({
 		},
 		functions:{
 			type:[String], require:false	
+		},
+		experience:{
+			type:[String], require:false
 		}
 	},
 	siteStandardProfileRequest:{
 		url:{type:String, require:false}
 	},
     lastName:   {type:String, require:true},
-   	friends:             {type:[connectionSchema], require:true	},
+   	friends:    {type:[{
+					id:              {type: mongoose.Schema.Types.ObjectId, require:true},
+					status:          {type: String, require:true},
+					date_connection: {type: Date, require:true},
+					last_update:     {type: Date, require:true},
+				}],
+				require:true
+	},
 	invitationsSent:     {type:[mongoose.Schema.Types.ObjectId], require:true},
 	invitationsReceived: {type:[mongoose.Schema.Types.ObjectId], require:true},
     trash:               {type:[mongoose.Schema.Types.ObjectId], require:true},

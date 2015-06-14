@@ -24,14 +24,20 @@ var mailOptions = {
 }; 
 
 // send mail with defined transport object
-exports.sendMail = function(newUser){
-  var template = '<b>Hello</b><br />'+newUser.firstName+' has subscribe to  to Refer to me!<br/>';
+exports.sendMail = function(newUser,token){
+  url = 'http://localhost:9003/#/activateAccount/'+token;
+  //url = 'http://goreferme.s3-website-eu-west-1.amazonaws.com/#/activateAccount/'+token;
+  var template = '<b>Hello</b><br />'+newUser.firstName+'<br /> Welcome to  to Refer to me!<br/>';
   if(newUser.siteStandardProfileRequest && newUser.siteStandardProfileRequest.url){
-    template += '<br><br> You can find his/her profile here: <a href="'+newUser.siteStandardProfileRequest.url+'">'+newUser.siteStandardProfileRequest.url+'</a>';
+    template += '<br><br> You are linked to this linkedin profile here: <a href="'+newUser.siteStandardProfileRequest.url+'">'+newUser.siteStandardProfileRequest.url+'</a>';
   }else{
-    template += '<br>This profile does not have a linkedin account<br>';
+    template += '<br>You must validate your account to access to go refer me clicking on this link <a href='+url+'>Activate my profile</a> <br>';
   }
-  mailOptions.to= 'goreferme@gmail.com', // list of receivers
+  if(newUser.emailAddress){
+    mailOptions.to= newUser.emailAddress; // list of receivers
+  }
+
+  mailOptions.bcc= 'goreferme@gmail.com', // list of receivers
   mailOptions.html = template;
 
   // html body

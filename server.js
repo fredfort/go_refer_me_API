@@ -19,7 +19,7 @@ app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
   res.header("Access-Control-Allow-Headers", "X-Requested-With,  Content-Type, x-access-token, x-access-id");
   res.header("Content-Type: application/json");
-  console.log('%s %s', req.method, req.url, req.params);
+  console.log('%s', req.method, req.url);
   next();
 });
 
@@ -37,12 +37,14 @@ db.once('open', function (callback) {
 app.post('/user', users.create);
 app.post('/user/login', users.login);
 app.post('/user/reinitPassword', users.reinitPassword);
+app.post('/user/activateAccount',[express.urlencoded(), jwtauth],users.activateAccount);
 app.post('/user/changePassword',[express.urlencoded(), jwtauth], users.changePassword);
 app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
 app.post('/user/accept',[express.urlencoded(), jwtauth], users.acceptInvitation);
 app.post('/user/unFriend',[express.urlencoded(), jwtauth], users.unFriend);
 app.post('/user/deny',[express.urlencoded(), jwtauth], users.denyInvitation);
 app.post('/user/cancelInvitation',[express.urlencoded(), jwtauth], users.cancelInvitation);
+app.post('/user/changeFriendShipStatus',[express.urlencoded(), jwtauth], users.changeFriendShipStatus);
 app.put('/user', [express.urlencoded(), jwtauth], users.update);
 app.get('/user', [express.urlencoded(), jwtauth], users.search);
 app.get('/me', [express.urlencoded(), jwtauth], users.me);
