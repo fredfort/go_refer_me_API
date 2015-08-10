@@ -24,6 +24,7 @@ var usersSchema = mongoose.Schema ({
     },
 	pictureUrl: {type:String, require:true},
 	search: {
+		all_criteria: {type:Boolean, require: true, default:false},
 		locations:{
 			type:[String], require:false
 		},
@@ -41,6 +42,7 @@ var usersSchema = mongoose.Schema ({
 		}
 	},
 	wants: {
+		all_criteria: {type:Boolean, require: true, default:false},
 		locations:{
 			type:[String], require:false
 		},

@@ -35,12 +35,13 @@ createUser = function(userObject,res){
 };
 
 updateUser = function(newUser,existingUser, res){
-	existingUser.firstName  = newUser.firstName;
-	existingUser.headline   = newUser.headline;
-	existingUser.location   = newUser.location;
-	existingUser.pictureUrl = newUser.pictureUrl;
-    existingUser.lastName   = newUser.lastName;
-    existingUser.emailAddress   = newUser.emailAddress;
+	existingUser.firstName    = newUser.firstName;
+	existingUser.headline     = newUser.headline;
+	existingUser.location     = newUser.location;
+	existingUser.pictureUrl   = newUser.pictureUrl;
+    existingUser.lastName     = newUser.lastName;
+    existingUser.emailAddress = newUser.emailAddress;
+    existingUser.active       = newUser.active;
 
     existingUser.save();
 
@@ -75,20 +76,33 @@ exports.search = function(req, res) {
 		functions     = currentUser.search.functions,
 		experience    = currentUser.search.experience;
 		var search = user.find();
-		if(locations.length > 0){
-			search.where('wants.locations').in(locations);
-		}
-		if(industries.length > 0){
-			search.where('wants.industries').in(industries);
-		}
-		if(languages.length > 0){
-			search.where('wants.languages').in(languages);
-		}
-		if(functions.length > 0){
-			search.where('wants.functions').in(functions);
-		}
-		if(experience.length > 0){
-			search.where('wants.experience').in(experience);
+
+		if(currentUser.search.all_criteria){
+			if(locations.length > 0){
+				search.where('wants.locations').in(locations);
+			}
+			if(industries.length > 0){
+				search.where('wants.industries').in(industries);
+			}
+			if(languages.length > 0){
+				search.where('wants.languages').in(languages);
+			}
+			if(functions.length > 0){
+				search.where('wants.functions').in(functions);
+			}
+			if(experience.length > 0){
+				search.where('wants.experience').in(experience);
+			}
+		}else{
+			if(locations.length || industries.length || languages.length || functions.length || experience.length){
+				search.or([
+				  { 'wants.locations' : { $in: locations } },
+				  { 'wants.industries' : { $in: industries } },
+				  { 'wants.languages' : { $in: languages } },
+				  { 'wants.functions' : { $in: functions } },
+				  { 'wants.experience' : { $in: experience } }
+				]);
+			}
 		}
 		search.where('category').equals('looking_for_job')
 		.exec(function(err, result){
@@ -103,23 +117,37 @@ exports.search = function(req, res) {
 		functions     = currentUser.wants.functions,
 		experience    = currentUser.wants.experience;
 		var search = user.find();
-		if(companies.length > 0){
-			search.where('currentJob.company').in(companies);
-		}
-		if(locations.length > 0){
-			search.where('search.locations').in(locations);
-		}
-		if(industries.length > 0){
-			search.where('industry').in(industries);
-		}
-		if(languages.length > 0){
-			search.where('search.languages').in(languages);
-		}
-		if(functions.length > 0){
-			search.where('search.functions').in(functions);
-		}
-		if(experience.length > 0){
-			search.where('search.experience').in(experience);
+
+		if(currentUser.wants.all_criteria){
+			if(companies.length > 0){
+				search.where('currentJob.company').in(companies);
+			}
+			if(locations.length > 0){
+				search.where('search.locations').in(locations);
+			}
+			if(industries.length > 0){
+				search.where('industry').in(industries);
+			}
+			if(languages.length > 0){
+				search.where('search.languages').in(languages);
+			}
+			if(functions.length > 0){
+				search.where('search.functions').in(functions);
+			}
+			if(experience.length > 0){
+				search.where('search.experience').in(experience);
+			}
+		}else{
+			if(locations.length || companies.length || languages.length || functions.length || experience.length){
+				search.or([
+				  { 'search.locations' : { $in: locations } },
+				  { 'search.languages' : { $in: languages } },
+				  { 'search.functions' : { $in: functions } },
+				  { 'search.experience' : { $in: experience } },
+				  { 'currentJob.company' : { $in:companies} },
+				  { 'industry' : { $in:industries} },
+				]);
+			}
 		}
 		search.where('category').equals('referer')
 		.exec(function(err, result){
@@ -142,12 +170,18 @@ exports.searchByIds = function(req, res) {
 };
 
 exports.update = function(req, res) {
-	var userObject = req.body.user || '';
-	var query = { id: userObject.id };
-	user.update(query, userObject,{}, function(err,updatedUser){
-		if(err)return console.log(err);
-		res.send(userObject);
-	});
+	var newUser = req.body.user || '';
+	user.findOne({_id : ObjectId(newUser._id)},function(err, existingUser){
+   		if(err)return console.log(err);
+   		existingUser.search  = newUser.search;
+   		existingUser.wants    = newUser.wants;
+   		existingUser.category = newUser.category;
+
+   		existingUser.save(function(err, newUser){
+   			if(err) return console.log(err);
+   			res.send(newUser.toJSON());
+   		});
+ 	});
 };
 
 exports.create = function(req, res) {
@@ -351,6 +385,14 @@ exports.login = function(req, res){
 	      return res.send({credentials:false});
 	    }
 
+	    if(!userFound){
+	    	return res.send({credentials:false, error:'Login and/or password incorrect'});
+	    }
+
+	    if(!userFound.active){
+	    	return res.send({credentials:false, error:'Your account haven\'t been activated yet.'});
+	    }
+
 		userFound.comparePassword(password,function(ok){
 			if(ok){
 				var expires = moment().add('days', 7).valueOf();
@@ -365,7 +407,7 @@ exports.login = function(req, res){
 				  user: userFound.toJSON()
 				});	
 			}else{
-				res.send({credentials:false});
+				return res.send({credentials:false, error:'Login and/or password incorrect'});
 			}
 		});
 	});
