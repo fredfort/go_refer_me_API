@@ -26,7 +26,7 @@ var mailOptions = {
 // send mail with defined transport object
 exports.sendMail = function(newUser,token){
   //url = 'http://localhost:9003/#/activateAccount/'+token;
-  url = 'http://goreferme.s3-website-eu-west-1.amazonaws.com/#/activateAccount/'+token;
+  url = 'http://goreferme.s3-website-eu-west-1.amazonaws.com/#/activateAccount?access_token='+token;
   var template = '<b>Hello</b><br />'+newUser.firstName+'<br /> Welcome to  to Refer to me!<br/>';
   if(newUser.siteStandardProfileRequest && newUser.siteStandardProfileRequest.url){
     template += '<br><br> You are linked to this linkedin profile here: <a href="'+newUser.siteStandardProfileRequest.url+'">'+newUser.siteStandardProfileRequest.url+'</a>';

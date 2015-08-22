@@ -5,11 +5,11 @@ var http = require('http').Server(app);
 
 app.set('port',process.env.PORT || 3000);
 
-var  users = require('./routes/users'),
-    jwt = require('jwt-simple'),
-    mongojs = require("mongojs"),
+var  users   = require('./routes/users'),
+    jwt      = require('jwt-simple'),
+    mongojs  = require("mongojs"),
     mongoose = require("mongoose"),
-    jwtauth = require('./utils/jwtauth.js');
+    jwtauth  = require('./utils/jwtauth.js');
 
 app.use(express.urlencoded()); 
 app.use(express.json());
@@ -33,10 +33,12 @@ db.once('open', function (callback) {
   console.log("connected to go_refer_me_ue");
 });
 
-
+//no authentification needed
 app.post('/user', users.create);
 app.post('/user/login', users.login);
 app.post('/user/reinitPassword', users.reinitPassword);
+
+//Authentification needed. jwtauth takes care of it
 app.post('/user/activateAccount',[express.urlencoded(), jwtauth],users.activateAccount);
 app.post('/user/changePassword',[express.urlencoded(), jwtauth], users.changePassword);
 app.post('/user/search',[express.urlencoded(), jwtauth], users.searchByIds);
@@ -68,7 +70,7 @@ app.use(function(err, req, res, next) {
   res.send(err.message || '** This URL is not valid, please read the documentation **');
 });
 
-
 app.listen(app.get('port'), function(){
+  console.log('Environment:'+app.get('env'));
   console.log('listening on *:'+app.get('port'));
 });

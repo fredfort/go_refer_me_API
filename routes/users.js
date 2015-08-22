@@ -69,6 +69,9 @@ exports.me = function(req, res){
 
 exports.search = function(req, res) {
 	var currentUser = req.user;
+	if(req.query && req.query.category && req.query.category !== 'undefined'){
+		currentUser.category = req.query.category;
+	}
 	if(currentUser.category === 'referer'){
 		var locations = currentUser.search.locations,
 		industries    = currentUser.search.industries,
@@ -155,7 +158,7 @@ exports.search = function(req, res) {
 			res.send(result);
 		});
 	}else{
-		res.send('Invalid user', 403);
+		res.send({});
 	}
 };
 
@@ -173,9 +176,11 @@ exports.update = function(req, res) {
 	var newUser = req.body.user || '';
 	user.findOne({_id : ObjectId(newUser._id)},function(err, existingUser){
    		if(err)return console.log(err);
-   		existingUser.search  = newUser.search;
+   		existingUser.search   = newUser.search;
    		existingUser.wants    = newUser.wants;
    		existingUser.category = newUser.category;
+   		existingUser.saved    = newUser.saved;
+   		existingUser.trash     = newUser.trash;
 
    		existingUser.save(function(err, newUser){
    			if(err) return console.log(err);
@@ -478,8 +483,10 @@ exports.changeFriendShipStatus = function(req, res){
 
 exports.activateAccount = function(req, res){
 	var currentUser = req.user;
+	debugger;
 	user.update({ _id: currentUser._id },{active:true }, function(err,success){
 		if(err)return console.log(err);
+		debugger;
 		res.send({ok:true});//the response is sent
 	});
 };

@@ -2,9 +2,7 @@ var user = require('../models/users.js');
 var jwt = require('jwt-simple');
  
 module.exports = function(req, res, next) {
-
 	var token = (req.body && req.body.access_token) || (req.query && req.query.access_token) || req.headers['x-access-token'];
-
 	if (token) {
 	  try {
 	    var decoded = jwt.decode(token, 'fatcap32');
@@ -17,11 +15,13 @@ module.exports = function(req, res, next) {
 		        console.log(err);
 		        return res.send('Cannot find the user',401);
 		    }
-		    if(!user.active && req.url !== '/user/activateAccount'){
+		    if(user && !user.active && req.url.indexOf('/user/activateAccount') === -1 ){
 		    	return res.send('User not activated',401);
 		    }
-			req.id = user.id;
-			req.user = user;
+		    if(user){
+				req.id = user.id;
+				req.user = user;
+			}
 			next();
 		});
 	  } catch (err) {
