@@ -344,7 +344,8 @@ exports.unFriend = function(req, res){
 		});
 
 		//unfriended user is updated (-1 friend)
-		userUnfriended.friends = _.without(userUnfriended.friends, currentUser._id.toString());
+		debugger;
+		userUnfriended.friends = _.without(userUnfriended.friends, friend);
 		user.update({ _id: userUnfriended._id },{friends: userUnfriended.friends}, function(err2,success2){
 			if(err2)return console.log(err2);
 			res.send(currentUser._doc);//the response is finally sent
