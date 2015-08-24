@@ -5,11 +5,12 @@ var http = require('http').Server(app);
 
 app.set('port',process.env.PORT || 3000);
 
-var  users   = require('./routes/users'),
-    jwt      = require('jwt-simple'),
-    mongojs  = require("mongojs"),
-    mongoose = require("mongoose"),
-    jwtauth  = require('./utils/jwtauth.js');
+var  users     = require('./routes/users'),
+    userSearch = require('./routes/search'), 
+    jwt        = require('jwt-simple'),
+    mongojs    = require("mongojs"),
+    mongoose   =  require("mongoose"),
+    jwtauth    = require('./utils/jwtauth.js');
 
 app.use(express.urlencoded()); 
 app.use(express.json());
@@ -48,7 +49,7 @@ app.post('/user/deny',[express.urlencoded(), jwtauth], users.denyInvitation);
 app.post('/user/cancelInvitation',[express.urlencoded(), jwtauth], users.cancelInvitation);
 app.post('/user/changeFriendShipStatus',[express.urlencoded(), jwtauth], users.changeFriendShipStatus);
 app.put('/user', [express.urlencoded(), jwtauth], users.update);
-app.get('/user', [express.urlencoded(), jwtauth], users.search);
+app.get('/user', [express.urlencoded(), jwtauth], userSearch.search);
 app.get('/me', [express.urlencoded(), jwtauth], users.me);
 app.get('/companies', [express.urlencoded(), jwtauth], users.getUserCompanies);
 app.post('/invite', [express.urlencoded(), jwtauth], users.invite);

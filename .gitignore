@@ -7,3 +7,4 @@ plugins/
 www/lib/
 bower_components/
 *.zip
+*.DS_Store
