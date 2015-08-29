@@ -17,39 +17,31 @@ exports.search = function(req, res) {
 		functions     = currentUser.search.functions,
 		experience    = currentUser.search.experience;
 
+		if(!locations.length  && !industries.length  && !languages.length  && 
+		   !functions.length  && !experience.length){
+			return res.send({});//no filter, no results
+		}
+
 		var search = user.find();
 
-		if(currentUser.search.all_criteria){
-			if(locations.length > 0){
-				search.where('wants.locations').in(locations);
-			}
-			if(industries.length > 0){
-				search.where('wants.industries').in(industries);
-			}
-			if(languages.length > 0){
-				search.where('wants.languages').in(languages);
-			}
-			if(functions.length > 0){
-				search.where('wants.functions').in(functions);
-			}
-			//doesnt not filter if the 2 differents experiences are ticked
-			if(experience.length > 0 && experience.length < 3){
-				search.or([
-					{'wants.experience':{ $in: experience } },
-					{'wants.experience':{$size: 0} }
-				]);
-			}
-		}else{
-			console.log('Heya')
-			if(locations.length || industries.length || languages.length || functions.length || (experience.length && experience.length < 3)){
-				search.or([
-				  { 'wants.locations' : { $in: locations } },
-				  { 'wants.industries' : { $in: industries } },
-				  { 'wants.languages' : { $in: languages } },
-				  { 'wants.functions' : { $in: functions } },
-				  { 'wants.experience' : { $in: experience } }
-				]);
-			}
+		if(locations.length > 0){
+			search.where('wants.locations').in(locations);
+		}
+		if(industries.length > 0){
+			search.where('wants.industries').in(industries);
+		}
+		if(languages.length > 0){
+			search.where('wants.languages').in(languages);
+		}
+		if(functions.length > 0){
+			search.where('wants.functions').in(functions);
+		}
+		//doesnt not filter if the 2 differents experiences are ticked
+		if(experience.length > 0 && experience.length < 3){
+			search.or([
+				{'wants.experience':{ $in: experience } },
+				{'wants.experience':{$size: 0} }
+			]);
 		}
 		search.limit(pageSize).skip(skip);
 		search.where('category').equals('looking_for_job')
@@ -65,42 +57,36 @@ exports.search = function(req, res) {
 		functions     = currentUser.wants.functions,
 		experience    = currentUser.wants.experience;
 
+		if(!companies.length && !locations.length  && !industries.length  && !languages.length  && 
+		   !functions.length && !experience.length){
+			return res.send({});//no filter, no results
+		}
+
 		var search = user.find();
 
-		if(currentUser.wants.all_criteria){
-			if(companies.length > 0){
-				search.where('currentJob.company').in(companies);
-			}
-			if(locations.length > 0){
-				search.where('search.locations').in(locations);
-			}
-			if(industries.length > 0){
-				search.where('industry').in(industries);
-			}
-			if(languages.length > 0){
-				search.where('search.languages').in(languages);
-			}
-			if(functions.length > 0){
-				search.where('search.functions').in(functions);
-			}
-			if(experience.length > 0 && experience.length < 3 ){
-				search.or([
-					{'search.experience':{ $in: experience } },
-					{'search.experience':{$size: 0} }
-				]);
-			}
-		}else{
-			if(locations.length || companies.length || languages.length || functions.length || (experience.length && experience.length < 3)){
-				search.or([
-				  { 'search.locations' : { $in: locations } },
-				  { 'search.languages' : { $in: languages } },
-				  { 'search.functions' : { $in: functions } },
-				  { 'search.experience' : { $in: experience } },
-				  { 'currentJob.company' : { $in:companies} },
-				  { 'industry' : { $in:industries} },
-				]);
-			}
+
+		if(companies.length > 0){
+			search.where('currentJob.company').in(companies);
 		}
+		if(locations.length > 0){
+			search.where('search.locations').in(locations);
+		}
+		if(industries.length > 0){
+			search.where('industry').in(industries);
+		}
+		if(languages.length > 0){
+			search.where('search.languages').in(languages);
+		}
+		if(functions.length > 0){
+			search.where('search.functions').in(functions);
+		}
+		if(experience.length > 0 && experience.length < 3 ){
+			search.or([
+				{'search.experience':{ $in: experience } },
+				{'search.experience':{$size: 0} }
+			]);
+		}
+
 		search.limit(pageSize).skip(skip);
 		search.where('category').equals('referer');
 		search.exec(function(err, result){
@@ -108,6 +94,7 @@ exports.search = function(req, res) {
 			res.send(result);
 		});
 	}else{
-		res.send({message:'Unknow category '+currentUser.category });
+		console.log('unknow category '+currentUser.category)
+		res.send({});
 	}
 };
