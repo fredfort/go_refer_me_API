@@ -53,6 +53,7 @@ app.get('/user', [express.urlencoded(), jwtauth], userSearch.search);
 app.get('/me', [express.urlencoded(), jwtauth], users.me);
 app.get('/companies', [express.urlencoded(), jwtauth], users.getUserCompanies);
 app.post('/invite', [express.urlencoded(), jwtauth], users.invite);
+app.delete('/user', [express.urlencoded(), jwtauth], users.delete);
 
 
 // if none of the previous url get called 404 handeling

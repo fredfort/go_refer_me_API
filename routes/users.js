@@ -392,7 +392,17 @@ exports.activateAccount = function(req, res){
 	debugger;
 	user.update({ _id: currentUser._id },{active:true }, function(err,success){
 		if(err)return console.log(err);
-		debugger;
 		res.send({ok:true});//the response is sent
 	});
+};
+
+exports.delete = function(req, res){
+	debugger;
+	var currentUser = req.user;
+	user
+	.findOne({ _id: currentUser._id })
+	.remove(function(err, success){
+		if(err)return console.log(err);
+		res.send({ok:true});//the response is sent
+	}); 
 };
