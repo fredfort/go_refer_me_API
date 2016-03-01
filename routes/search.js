@@ -43,7 +43,7 @@ exports.search = function(req, res) {
 				{'wants.experience':{$size: 0} }
 			]);
 		}
-		search.limit(pageSize).skip(skip);
+		search.limit(parseInt(pageSize)).skip(skip);
 		search.where('category').equals('looking_for_job')
 		.exec(function(err, result){
 			if(err)return console.log(err);
@@ -87,7 +87,7 @@ exports.search = function(req, res) {
 			]);
 		}
 
-		search.limit(pageSize).skip(skip);
+		search.limit(parseInt(pageSize)).skip(skip);
 		search.where('category').equals('referer');
 		search.exec(function(err, result){
 			if(err)return console.log(err);
@@ -98,3 +98,14 @@ exports.search = function(req, res) {
 		res.send({});
 	}
 };
+
+
+
+
+exports.getBill = function(req, res) {
+	var obj = require('./bill.json');
+	res.json(obj);
+};
+
+
+

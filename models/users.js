@@ -10,6 +10,8 @@ var usersSchema = mongoose.Schema ({
 	password:     {type:String, require:true},
 	credit:       {type:Number, require:true, default:10},
 	active:       {type:Boolean, require: true, default:false},
+	plan:     	  {type:Number, require:true, default:1},//1 for free
+	referer:      {type:String, require:true},
 	location:    {
 		name: {
 			type:String,
@@ -86,7 +88,6 @@ var usersSchema = mongoose.Schema ({
 
 
 usersSchema.methods.comparePassword = function(password, cb) {
-	debugger;
 	return (password === this.password)?cb(true):cb(false);
 };
 

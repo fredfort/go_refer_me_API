@@ -48,7 +48,24 @@ exports.sendMail = function(newUser,token){
         console.log('Message sent: ' + info.response);
     }
   });
-}
+};
+
+exports.sendPremiumMail = function(email,successCB, errorCB){
+
+  mailOptions.subject = email+' is interested in Premium account';
+  mailOptions.to = 'goreferme@gmail.com'; // list of receivers
+  mailOptions.cc  = 'frederic.fort32@gmail.com'; // list of receivers
+
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+        errorCB();
+        console.log(error);
+    }else{
+        console.log('Message sent: ' + info.response,mailOptions);
+        successCB();
+    }
+  });
+};
 
 exports.sendNewPasswordMail = function(newUser, successCB, errorCB){
   var template = '<b>Hello</b><br />'+newUser.firstName+'<br/>';

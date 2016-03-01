@@ -7,6 +7,7 @@ app.set('port',process.env.PORT || 3000);
 
 var  users     = require('./routes/users'),
     userSearch = require('./routes/search'), 
+    paypal     = require('./routes/paypal'), 
     jwt        = require('jwt-simple'),
     mongojs    = require("mongojs"),
     mongoose   =  require("mongoose"),
@@ -18,7 +19,7 @@ app.use(express.json());
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
-  res.header("Access-Control-Allow-Headers", "X-Requested-With,  Content-Type, x-access-token, x-access-id");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With,  Content-Type, x-access-token, x-access-id, SM_USER, PUID");
   res.header("Content-Type: application/json");
   console.log('%s', req.method, req.url);
   next();
@@ -54,6 +55,14 @@ app.get('/me', [express.urlencoded(), jwtauth], users.me);
 app.get('/companies', [express.urlencoded(), jwtauth], users.getUserCompanies);
 app.post('/invite', [express.urlencoded(), jwtauth], users.invite);
 app.delete('/user', [express.urlencoded(), jwtauth], users.delete);
+app.post('/premiumEmail',[express.urlencoded(), jwtauth], users.premiumEmail);
+app.post('/user/referer',[express.urlencoded(), jwtauth], users.addReferer);
+
+app.get('/paypal/token',paypal.getToken);
+
+
+
+app.get('/documents/:documentId',[express.urlencoded()], userSearch.getBill);
 
 
 // if none of the previous url get called 404 handeling

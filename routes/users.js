@@ -11,6 +11,7 @@ var connectionStatus = {
 
 createUser = function(userObject,res){
 	var userToInsert = new user(userObject);
+	console.log(userToInsert);
 
 	userToInsert.save(function(err, newUser){
 		console.log(err);
@@ -33,6 +34,9 @@ createUser = function(userObject,res){
 
 	});
 };
+
+
+
 
 updateUser = function(newUser,existingUser, res){
 	existingUser.firstName    = newUser.firstName;
@@ -86,7 +90,9 @@ exports.update = function(req, res) {
    		existingUser.wants    = newUser.wants;
    		existingUser.category = newUser.category;
    		existingUser.saved    = newUser.saved;
-   		existingUser.trash     = newUser.trash;
+   		existingUser.trash    = newUser.trash;
+   		existingUser.credit   = newUser.credit;
+   		existingUser.referer  = newUser.referer;
 
    		existingUser.save(function(err, newUser){
    			if(err) return console.log(err);
@@ -123,6 +129,41 @@ exports.getUserCompanies = function(req, res){
    		if(err)return console.log(err);
  		res.send(result);
  	});
+};
+
+
+exports.addReferer = function(req, res){
+	var currentUser = req.user;
+	var idReferer   = req.body.id;
+	if (!currentUser || currentUser.length === 0 || !idReferer) {
+	    return res.send(401,'idReferer is required');
+	}
+	if(currentUser._id.toString() === idReferer){
+		return res.send(400,'You can\'t add your own ID');
+	}
+	if(currentUser.referer){
+		return res.send(400,'You already have a referer');
+	}
+	user.findOne({_id : idReferer},function(err, referer){
+		if(err)return console.log(err);
+		if(referer){
+			referer.credit += 15;
+			referer.save();
+			currentUser.credit +=15;
+			currentUser.referer = idReferer;
+			currentUser.save(function(err, newUser){
+	   			if(err) return console.log(err);
+	   			res.send({
+	   				user:newUser.toJSON(),
+	   				referer:referer
+	   			});
+	   		});
+		}else{
+			return res.send(404,'Referer not found');
+		}
+	});
+
+
 };
 
 exports.invite = function(req, res){
@@ -389,7 +430,6 @@ exports.changeFriendShipStatus = function(req, res){
 
 exports.activateAccount = function(req, res){
 	var currentUser = req.user;
-	debugger;
 	user.update({ _id: currentUser._id },{active:true }, function(err,success){
 		if(err)return console.log(err);
 		res.send({ok:true});//the response is sent
@@ -397,7 +437,6 @@ exports.activateAccount = function(req, res){
 };
 
 exports.delete = function(req, res){
-	debugger;
 	var currentUser = req.user;
 	user
 	.findOne({ _id: currentUser._id })
@@ -405,4 +444,13 @@ exports.delete = function(req, res){
 		if(err)return console.log(err);
 		res.send({ok:true});//the response is sent
 	}); 
+};
+
+
+exports.premiumEmail = function(req,res){
+	nodemailer.sendPremiumMail(req.body.email,function(){
+	    	res.send({ok:true});
+	}, function(){
+	    	res.send({ok:false, message:'The mail could not be sent to '+req.body.email});
+	});
 };
