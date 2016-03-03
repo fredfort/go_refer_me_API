@@ -10,6 +10,7 @@ var connectionStatus = {
 };
 
 createUser = function(userObject,res){
+	debugger;
 	var userToInsert = new user(userObject);
 	console.log(userToInsert);
 
@@ -194,6 +195,7 @@ exports.invite = function(req, res){
 exports.acceptInvitation = function(req,res){
 	var currentUser = req.user;
 	var userAccepted = req.body.user || '';
+
 	//Check that we really got the invitation
 	var invitation_user_id = _.find(currentUser.invitationsReceived, function(userId){
 		return userId.equals(userAccepted._id);
@@ -224,6 +226,7 @@ exports.acceptInvitation = function(req,res){
 			//accepted user is updated (+ 1 friends, -1 invitationsSent)
 			var invitationsSent = _.without(userAccepted.invitationsSent, currentUser._id.toString());
 			friends = userAccepted.friends;
+			var credit = userAccepted.credit - 1;
 			var friendsIds = _.map(friends, function(friend){
 				return friend.id;
 			});
@@ -236,7 +239,7 @@ exports.acceptInvitation = function(req,res){
 				};
 				friends.push(newFriend);
 			}
-			user.update({ _id: userAccepted._id },{invitationsSent: invitationsSent, friends:friends}, function(err2,success2){
+			user.update({ _id: userAccepted._id },{invitationsSent: invitationsSent, friends:friends,credit:credit}, function(err2,success2){
 				if(err2)return console.log(err2);
 				res.send(currentUser._doc);//the response is finally sent
 			});
